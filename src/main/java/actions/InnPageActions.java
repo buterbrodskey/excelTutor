@@ -12,7 +12,7 @@ import java.awt.datatransfer.StringSelection;
 
 public class InnPageActions {
 
-    public InnPage page;
+    private final InnPage page;
 
     public InnPageActions(InnPage page) {
         this.page = page;
@@ -21,9 +21,13 @@ public class InnPageActions {
     public void fillPersonInnDate(InnSearchModel search) {
         fillField(page.getNameInput(), search.getName());
         fillField(page.getLastNameInput(), search.getLastName());
-        fillField(page.getNameOfFatherInput(), search.getNameOfFather());
+        fillNameOfFather(page.getNameOfFatherInput(), search.getNameOfFather());
         fillField(page.getBdateInput(), search.getDate());
-        fillField(page.getDocnoInput(), String.valueOf(search.getPassport()));
+        if (String.valueOf(search.getPassport()).length() == 9) {
+            fillField(page.getDocnoInput(), "0" +search.getPassport());
+        } else {
+            fillField(page.getDocnoInput(), String.valueOf(search.getPassport()));
+        }
         page.getSendButton().click();
     }
 
@@ -34,7 +38,26 @@ public class InnPageActions {
         }
     }
 
-    public void fillField(SelenideElement input, String value) {
+    private void fillNameOfFather(SelenideElement input, String value) {
+        if (value == null || value.equals("")) {
+            page.getNoOtchCheckBox().click();
+        } else {
+            StringSelection stringSelection = new StringSelection(value);
+            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+            String currentInputText = null;
+            while (currentInputText == null || currentInputText.isEmpty()) {
+                clipboard.setContents(stringSelection, null);
+                input.click();
+                input.sendKeys(Keys.CONTROL, "V");
+                currentInputText = input.getValue();
+            }
+        }
+    }
+
+    private void fillField(SelenideElement input, String value) {
+        if (input.getAttribute("name").equals("otch") && (value == null || value.isEmpty())) {
+            return;
+        }
         StringSelection stringSelection = new StringSelection(value);
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         String currentInputText = null;

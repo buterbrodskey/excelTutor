@@ -37,6 +37,10 @@ public class InnPage {
     private SelenideElement sendButton;
 
     public SelenideElement getVisibleResult() {
-        return $(By.xpath("//div[@style=\"display: block;\"]"));
+        SelenideElement selenideElement = $(By.xpath("//div[@style=\"display: block;\"]"));
+        return selenideElement;
+    }
+    public SelenideElement getNoOtchCheckBox() {
+        return $(By.id("unichk_0"));
     }
 }
