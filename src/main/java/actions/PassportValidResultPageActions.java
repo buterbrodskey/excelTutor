@@ -12,21 +12,10 @@ public class PassportValidResultPageActions {
         this.passportValidResultPage= passportValidResultPage;
     }
 
-    public boolean isValid(long series, long number) {
-        String strNumber = String.valueOf(number);
-        String strSeries = String.valueOf(series);
-        if (strNumber.length() == 5) {
-            strNumber = "0" + strNumber;
-        }
-        if (strNumber.length() == 4) {
-            strNumber = "00" + strNumber;
-        }
-        if (strSeries.length() == 3) {
-            strSeries = "0" + strSeries;
-        }
+    public boolean isValid(String series, String number) {
         while (true) {
             if (passportValidResultPage.getResult().isDisplayed()) {
-                return passportValidResultPage.getResult().getText().equals(String.format(expectedResultMessage, strSeries, strNumber));
+                return passportValidResultPage.getResult().getText().equals(String.format(expectedResultMessage, series, number));
             }
         }
 

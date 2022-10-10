@@ -1,6 +1,8 @@
 package excel;
 
+import org.apache.commons.codec.binary.Hex;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.File;
@@ -10,9 +12,9 @@ import java.io.IOException;
 
 public class ExcelUtils {
 
-    private static Workbook workbook;
+    private static XSSFWorkbook workbook;
 
-    public static Workbook getWorkBook(String fileLocation) throws IOException {
+    public static XSSFWorkbook getWorkBookForRead(String fileLocation) throws IOException {
         if (workbook == null) {
             try {
                 FileInputStream file = new FileInputStream(new File(fileLocation));
@@ -22,5 +24,13 @@ public class ExcelUtils {
             }
         }
         return workbook;
+    }
+
+    public static String getBackgroundColor(XSSFCell cell) {
+        byte[] rgbWithTint = cell.getCellStyle().getFillForegroundColorColor().getRGBWithTint();
+        if (rgbWithTint == null) {
+            return null;
+        }
+        return Hex.encodeHexString(rgbWithTint);
     }
 }

@@ -1,7 +1,7 @@
 package actions;
 
 import com.codeborne.selenide.SelenideElement;
-import model.InnSearchModel;
+import model.PersonModel;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import pages.InnPage;
@@ -18,7 +18,7 @@ public class InnPageActions {
         this.page = page;
     }
 
-    public void fillPersonInnDate(InnSearchModel search) {
+    public void fillPersonInnDate(PersonModel search) {
         fillField(page.getNameInput(), search.getName());
         fillField(page.getLastNameInput(), search.getLastName());
         fillNameOfFather(page.getNameOfFatherInput(), search.getNameOfFather());

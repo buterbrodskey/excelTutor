@@ -3,10 +3,10 @@ package model;
 import lombok.Data;
 
 @Data
-public class InnSearchModel {
+public class PersonModel {
     private String name;
     private String lastName;
     private String nameOfFather;
-    private long passport;
+    private String passport;
     private String date;
 }

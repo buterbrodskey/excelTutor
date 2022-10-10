@@ -34,8 +34,6 @@
             <scope>provided</scope>
         </dependency>
 
-
-
         <!-- https://mvnrepository.com/artifact/net.sourceforge.tess4j/tess4j -->
         <dependency>
             <groupId>net.sourceforge.tess4j</groupId>
@@ -44,5 +42,18 @@
         </dependency>
         <!-- Thanks for using https://jar-download.com -->
 
+        <!-- https://mvnrepository.com/artifact/com.github.2captcha/2captcha-java -->
+        <dependency>
+            <groupId>com.github.2captcha</groupId>
+            <artifactId>2captcha-java</artifactId>
+            <version>1.0.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx</artifactId>
+            <version>11</version>
+            <type>pom</type>
+        </dependency>
     </dependencies>
 </project>
