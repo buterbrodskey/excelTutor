@@ -20,19 +20,25 @@ import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import static com.codeborne.selenide.Selenide.open;
+import static com.codeborne.selenide.Selenide.sleep;
 import static excel.ExcelUtils.getBackgroundColor;
 
 public class Main {
 
-    private final static String INN_DOCUMENT_PATH = "src/main/resources/20.09.xlsx";
-    private final static String PASSPORT_DOCUMENT_PATH = "src/main/resources/20.09.xlsx";
+    private final static String INN_DOCUMENT_PATH = "src/main/resources/12.10.xlsx";
+    private final static String PASSPORT_DOCUMENT_PATH = "src/main/resources/2000.xlsx";
+    private final static String INN_KIRG_PATH = "src/main/resources/test.xlsx";
     private final static int LAST_NAME_INDEX = 0;
     private final static int NAME_INDEX = 1;
     private final static int NAME_OF_FATHER_INDEX = 2;
     private final static int DATE_INDEX = 3;
     private final static int PASSPORT_INDEX = 4;
+
+    private final static int INN_INDEX = 6;
+    private final static int PASSPORT_INVALID_MESSAGE_INDEX = 8;
 
     private final static String CAPTCHA_API_KEY = "d80ed595bdf19e4399db95b673fe281d";
 
@@ -43,13 +49,13 @@ public class Main {
         Configuration.timeout = 15000;
         Configuration.pageLoadTimeout = 120000;
         Configuration.remoteReadTimeout = 120000;
-        System.out.println("Действительность");
+        //System.out.println("Действительность");
         // Действительность
         checkValidOfPassport(PASSPORT_DOCUMENT_PATH);
-        System.out.println("ИНН");
+        //System.out.println("ИНН");
         // ИНН
-        checkAvailabilityOfInn(INN_DOCUMENT_PATH);
-
+        //checkAvailabilityOfInn(INN_DOCUMENT_PATH);
+        //checkInnKirg(INN_KIRG_PATH);
 
         // Долги
         //checkDebt(INN_DOCUMENT_PATH);
@@ -82,10 +88,13 @@ public class Main {
     }
 
     private static void checkValidOfPassport(String path) throws IOException, TesseractException, InterruptedException {
-        XSSFWorkbook workbook = ExcelUtils.getWorkBookForRead(path);
+        File filePath = new File(path);
+        FileInputStream file = new FileInputStream(filePath);
+        XSSFWorkbook workbook = new XSSFWorkbook(file);
         XSSFSheet sheet = workbook.getSheetAt(0);
         PersonModel person;
         for (int i = 0; i <= sheet.getLastRowNum(); i++) {
+            sleep(5000);
             XSSFRow row = sheet.getRow(i);
             try {
                 person = createPersonModel(row);
@@ -96,14 +105,24 @@ public class Main {
             String series = person.getPassport().substring(0, 4);
             String number = person.getPassport().substring(4, 10);
 
-            PassportValidPageActions passportValidPageActions = new PassportValidPageActions(open("http://xn--b1afk4ade4e.xn--b1ab2a0a.xn--b1aew.xn--p1ai/info-service.htm?sid=2000", PassportValidPage.class));
-            passportValidPageActions.fillData(series, number);
-            PassportValidResultPageActions passportValidResultPageActions = new PassportValidResultPageActions(passportValidPageActions.resolveCaptcha());
+            PassportValidPageActions passportValidPageActions;
+            PassportValidResultPageActions passportValidResultPageActions;
+            try {
+                passportValidPageActions = new PassportValidPageActions(open("http://xn--b1afk4ade4e.xn--b1ab2a0a.xn--b1aew.xn--p1ai/info-service.htm?sid=2000", PassportValidPage.class));
+                passportValidPageActions.fillData(series, number);
+                passportValidResultPageActions = new PassportValidResultPageActions(passportValidPageActions.resolveCaptcha());
+            } catch (Exception e) {
+                i-=2;
+                continue;
+            }
+
             int a = i;
 
             boolean result = passportValidResultPageActions.isValid(series, number);
 
             if (result == false) {
+                row.createCell(PASSPORT_INVALID_MESSAGE_INDEX).setCellValue("не действителен");
+
                 System.out.println();
                 System.out.print(++a + " ");
                 System.out.print(result + " ");
@@ -115,12 +134,18 @@ public class Main {
             } else {
                 System.out.print(++a + " ");
             }
+            file.close();
+
+            FileOutputStream outputStream = new FileOutputStream(filePath);
+            workbook.write(outputStream);
+            outputStream.close();
         }
     }
 
     public static void checkAvailabilityOfInn(String path) throws IOException {
-        List<Integer> list = new ArrayList<>();
-        XSSFWorkbook workbook = ExcelUtils.getWorkBookForRead(path);
+        File filePath = new File(path);
+        FileInputStream file = new FileInputStream(filePath);
+        XSSFWorkbook workbook = new XSSFWorkbook(file);
         XSSFSheet sheet = workbook.getSheetAt(0);
         PersonModel person;
         for (int i = 0; i <= sheet.getLastRowNum(); i++) {
@@ -140,7 +165,6 @@ public class Main {
             boolean result = innPageActions.isExistInn();
 
             if (result == false) {
-                list.add(i);
                 System.out.print(++a + " ");
                 System.out.println(
                         person.getLastName() + " " +
@@ -150,7 +174,52 @@ public class Main {
                                 person.getPassport());
             }
         }
-        //changeColorRows(list);
+    }
+
+    public static void checkInnKirg(String path) throws IOException {
+        File filePath = new File(path);
+        FileInputStream file = new FileInputStream(filePath);
+        XSSFWorkbook workbook = new XSSFWorkbook(file);
+        XSSFSheet sheet = workbook.getSheetAt(0);
+        PersonModel person;
+        for (int i = 0;
+             i <= sheet.getLastRowNum();
+             i++) {
+
+            XSSFRow row = sheet.getRow(i);
+            try {
+                person = createKirgPersonModel(row);
+            } catch (NullPointerException e) {
+                continue;
+            }
+
+            InnPageActions innPageActions = new InnPageActions(open("https://service.nalog.ru/inn.html", InnPage.class));
+            innPageActions.clickAgree();
+            innPageActions.changePassportType();
+            innPageActions.fillPersonInnDate(person);
+            int a = i;
+
+            boolean result = innPageActions.isExistInn();
+
+            if (result == false) {
+                System.out.print(++a + " ");
+                System.out.println(
+                        person.getLastName() + " " +
+                                person.getName() + " " +
+                                person.getNameOfFather() + " " +
+                                person.getDate() + " " +
+                                person.getPassport());
+            } else {
+                String inn = innPageActions.getInn();
+                XSSFCell cell = row.createCell(INN_INDEX);
+                cell.setCellValue(inn);
+            }
+        }
+        file.close();
+
+        FileOutputStream outputStream = new FileOutputStream(filePath);
+        workbook.write(outputStream);
+        outputStream.close();
     }
 
     public static PersonModel createPersonModel(XSSFRow row) {
@@ -195,10 +264,44 @@ public class Main {
         return person;
     }
 
-    public static void changeColorRows(List<Integer> list) throws IOException {
-        FileInputStream file = new FileInputStream(new File(INN_DOCUMENT_PATH));
-        XSSFWorkbook workbook = new XSSFWorkbook(file);
-        file.close();
+
+    public static PersonModel createKirgPersonModel(XSSFRow row) {
+        PersonModel person = new PersonModel();
+        String backgroundColor = "";
+
+        try {
+            backgroundColor = getBackgroundColor(row.getCell(LAST_NAME_INDEX));
+        } catch (NullPointerException e) {
+
+        }
+
+        if (backgroundColor.equals("ff0000")) {
+            throw new NullPointerException("Помечено красным");
+        }
+
+        String numericPassport = row.getCell(PASSPORT_INDEX).getStringCellValue();
+        if (numericPassport == null) throw new NullPointerException("Нет пасспорта");
+        String passport = numericPassport;
+
+
+        person.setLastName(row.getCell(LAST_NAME_INDEX).getStringCellValue());
+        person.setPassport(passport);
+        person.setDate(row.getCell(DATE_INDEX).getLocalDateTimeCellValue().format(DATE_FORMATTER));
+        person.setName(row.getCell(NAME_INDEX).getStringCellValue());
+
+        if (person.getDate() == null) {
+            throw new NullPointerException("Пустая дата");
+        }
+
+        try {
+            person.setNameOfFather(row.getCell(NAME_OF_FATHER_INDEX).getStringCellValue());
+        } catch (NullPointerException e) {
+            person.setNameOfFather(null);
+        }
+        return person;
+    }
+
+    public static void changeColorRows(int index, XSSFWorkbook workbook) throws IOException {
         XSSFSheet sheet = workbook.getSheetAt(0);
         XSSFCellStyle style = workbook.createCellStyle();
         byte[] rgb = new byte[3];
@@ -208,19 +311,9 @@ public class Main {
         XSSFColor myColor = new XSSFColor(rgb);
 
         style.setFillForegroundColor(myColor);
-        for (int i = 0; i <= sheet.getLastRowNum(); i++) {
-            if (list.contains(i)) {
-                XSSFRow row = sheet.getRow(i);
-                row.getCell(LAST_NAME_INDEX).setCellStyle(style);
-                row.getCell(NAME_INDEX).setCellStyle(style);
-                row.getCell(NAME_OF_FATHER_INDEX).setCellStyle(style);
-            }
-        }
-        FileOutputStream fos = new FileOutputStream(new File(INN_DOCUMENT_PATH));
-
-        workbook.write(fos);
-        fos.close();
-        System.out.println("Done");
+        XSSFRow row = sheet.getRow(index);
+        row.getCell(LAST_NAME_INDEX).setCellStyle(style);
+        row.getCell(NAME_INDEX).setCellStyle(style);
+        row.getCell(NAME_OF_FATHER_INDEX).setCellStyle(style);
     }
-
 }

@@ -23,11 +23,7 @@ public class InnPageActions {
         fillField(page.getLastNameInput(), search.getLastName());
         fillNameOfFather(page.getNameOfFatherInput(), search.getNameOfFather());
         fillField(page.getBdateInput(), search.getDate());
-        if (String.valueOf(search.getPassport()).length() == 9) {
-            fillField(page.getDocnoInput(), "0" +search.getPassport());
-        } else {
-            fillField(page.getDocnoInput(), String.valueOf(search.getPassport()));
-        }
+        fillField(page.getDocnoInput(), String.valueOf(search.getPassport()));
         page.getSendButton().click();
     }
 
@@ -75,5 +71,14 @@ public class InnPageActions {
         if (text.equals("Информация об ИНН найдена.")) return true;
         else if (text.equals("Информация об ИНН не найдена.")) return false;
         else throw new RuntimeException(text);
+    }
+
+    public String getInn() {
+        return page.getInn();
+    }
+
+    public void changePassportType() {
+        page.getArrow().click();
+        page.getInPass().click();
     }
 }
