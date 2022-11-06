@@ -9,4 +9,14 @@ public class PersonModel {
     private String nameOfFather;
     private String passport;
     private String date;
+    private int index;
+
+    @Override
+    public String toString() {
+        return index +
+                " " +lastName +
+                " " + name +
+                " " + nameOfFather +
+                " " + passport;
+    }
 }
