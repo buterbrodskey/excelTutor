@@ -264,6 +264,7 @@ public class Main {
                             if (birthday.equals(person.getDate())) {
                                 result = true;
                                 System.out.println("Дата совпала");
+                                closeWindow();
                                 break;
                             } else {
                                 System.out.println("Дата не совпала");
@@ -274,6 +275,7 @@ public class Main {
                             if (inn.equals(row.getCell(6).getStringCellValue())) {
                                 result = true;
                                 System.out.println("Инн совпал");
+                                closeWindow();
                                 break;
                             } else {
                                 System.out.println("Инн не совпал");
