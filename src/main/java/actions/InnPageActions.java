@@ -1,7 +1,7 @@
 package actions;
 
 import com.codeborne.selenide.SelenideElement;
-import model.PersonModel;
+import model.Person;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import pages.InnPage;
@@ -9,6 +9,8 @@ import pages.InnPage;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
+
+import static java.lang.Thread.sleep;
 
 public class InnPageActions {
 
@@ -18,7 +20,7 @@ public class InnPageActions {
         this.page = page;
     }
 
-    public void fillPersonInnDate(PersonModel search) {
+    public void fillPersonInnDate(Person search) throws InterruptedException {
         fillField(page.getNameInput(), search.getName());
         fillField(page.getLastNameInput(), search.getLastName());
         fillNameOfFather(page.getNameOfFatherInput(), search.getNameOfFather());
@@ -50,7 +52,7 @@ public class InnPageActions {
         }
     }
 
-    private void fillField(SelenideElement input, String value) {
+    private void fillField(SelenideElement input, String value) throws InterruptedException {
         if (input.getAttribute("name").equals("otch") && (value == null || value.isEmpty())) {
             return;
         }
@@ -58,7 +60,13 @@ public class InnPageActions {
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         String currentInputText = null;
         while (currentInputText == null || currentInputText.isEmpty()) {
-            clipboard.setContents(stringSelection, null);
+            try {
+                clipboard.setContents(stringSelection, null);
+            } catch (Exception e) {
+                sleep(1750);
+                clipboard.setContents(stringSelection, null);
+
+            }
             input.click();
             input.sendKeys(Keys.CONTROL, "V");
             currentInputText = input.getValue();

@@ -9,7 +9,7 @@ public class PassportValidResultPageActions {
     private final String expectedResultMessage = "По Вашему запросу о действительности паспорта РФ %s № %s получен ответ о том, что данный паспорт «Cреди недействительных не значится».";
 
     public PassportValidResultPageActions(PassportValidResultPage passportValidResultPage) {
-        this.passportValidResultPage= passportValidResultPage;
+        this.passportValidResultPage = passportValidResultPage;
     }
 
     public boolean isValid(String series, String number) {

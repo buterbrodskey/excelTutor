@@ -3,7 +3,6 @@ package pages;
 
 import com.codeborne.selenide.SelenideElement;
 import lombok.Getter;
-import net.sourceforge.lept4j.Sel;
 import org.openqa.selenium.By;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.How;
@@ -47,6 +46,7 @@ public class InnPage {
         SelenideElement selenideElement = $(By.xpath("//div[@style=\"display: block;\"]"));
         return selenideElement;
     }
+
     public SelenideElement getNoOtchCheckBox() {
         return $(By.id("unichk_0"));
     }

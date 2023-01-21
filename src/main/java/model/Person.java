@@ -3,20 +3,22 @@ package model;
 import lombok.Data;
 
 @Data
-public class PersonModel {
+public class Person {
     private String name;
     private String lastName;
     private String nameOfFather;
     private String passport;
     private String date;
+    private String inn;
     private int index;
 
     @Override
     public String toString() {
         return index +
-                " " +lastName +
+                " " + lastName +
                 " " + name +
                 " " + nameOfFather +
-                " " + passport;
+                " " + passport +
+                " " + inn;
     }
 }
