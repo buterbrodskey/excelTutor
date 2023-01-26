@@ -36,7 +36,7 @@ public class InnPageActions {
         }
     }
 
-    private void fillNameOfFather(SelenideElement input, String value) {
+    private void fillNameOfFather(SelenideElement input, String value) throws InterruptedException {
         if (value == null || value.equals("")) {
             page.getNoOtchCheckBox().click();
         } else {
@@ -44,7 +44,13 @@ public class InnPageActions {
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
             String currentInputText = null;
             while (currentInputText == null || currentInputText.isEmpty()) {
-                clipboard.setContents(stringSelection, null);
+                try{
+                    clipboard.setContents(stringSelection, null);
+                } catch (Exception e) {
+                    sleep(2000);
+                    clipboard.setContents(stringSelection, null);
+
+                }
                 input.click();
                 input.sendKeys(Keys.CONTROL, "V");
                 currentInputText = input.getValue();
@@ -63,7 +69,7 @@ public class InnPageActions {
             try {
                 clipboard.setContents(stringSelection, null);
             } catch (Exception e) {
-                sleep(1750);
+                sleep(3000);
                 clipboard.setContents(stringSelection, null);
 
             }
@@ -85,6 +91,12 @@ public class InnPageActions {
         return page.getInn();
     }
 
+    public boolean checkExistenceOfInn(Person person) throws InterruptedException {
+        this.clickAgree();
+        this.changePassportType();
+        this.fillPersonInnDate(person);
+        return this.isExistInn();
+    }
     public void changePassportType() {
         page.getArrow().click();
         page.getInPass().click();

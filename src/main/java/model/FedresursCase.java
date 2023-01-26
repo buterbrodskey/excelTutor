@@ -8,6 +8,7 @@ import lombok.experimental.Accessors;
 public class FedresursCase {
     private String title;
     private boolean our;
+
     public FedresursCase(String title) {
         this.title = title;
     }

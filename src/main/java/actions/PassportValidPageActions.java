@@ -1,5 +1,6 @@
 package actions;
 
+import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.SelenideElement;
 import com.twocaptcha.TwoCaptcha;
 import com.twocaptcha.captcha.Normal;
@@ -52,4 +53,22 @@ public class PassportValidPageActions {
         return page.getSubmit();
     }
 
+    public PassportValidResultPage resolveCaptcha(String series, String number) throws Exception {
+        TwoCaptcha solver = new TwoCaptcha("d80ed595bdf19e4399db95b673fe281d");
+        String path = "src/main/java/captcha/fsspCaptcha.png";
+        File captchaImage = page.getCaptcha().getScreenshotAs(OutputType.FILE);
+        FileHandler.copy(captchaImage, new File(path));
+
+        Normal captcha = new Normal(path);
+        solver.solve(captcha);
+        if (!captcha.getCode().matches("\\d{6}")) {
+            Selenide.refresh();
+            fillData(series, number);
+            resolveCaptcha(series, number);
+        }
+        System.out.println(captcha.getCode());
+        page.getCaptchaInput().sendKeys(captcha.getCode());
+        page.getSubmit().click();
+        return page(PassportValidResultPage.class);
+    }
 }

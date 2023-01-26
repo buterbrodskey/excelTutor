@@ -3,6 +3,7 @@ package application;
 import actions.InnPageActions;
 import actions.PassportValidPageActions;
 import actions.PassportValidResultPageActions;
+import checks.CheckPassports;
 import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.SelenideElement;
@@ -10,6 +11,7 @@ import com.codeborne.selenide.WebDriverRunner;
 import model.Person;
 import net.sourceforge.tess4j.TesseractException;
 import org.apache.poi.common.usermodel.HyperlinkType;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.xssf.usermodel.*;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
@@ -35,7 +37,7 @@ import static excel.ExcelUtils.getBackgroundColor;
 
 public class Main {
     private final static String INN_DOCUMENT_PATH = "src/main/resources/20.01.2.xlsx";
-    private final static String BANKRUPTS_PATH = "src/main/resources/fedresurs.xlsx";
+    private final static String BANKRUPTS_PATH = "src/main/resources/fedresursChecked.xlsx";
     private final static String PASSPORT_DOCUMENT_PATH = "src/main/resources/1000.xlsx";
     private final static String INN_KIRG_PATH1 = "src/main/resources/12 12 .xlsx";
     private final static String INN_KIRG_PATH2 = "src/main/resources/6 12.xlsx";
@@ -54,16 +56,39 @@ public class Main {
     private static final int INN_INDEX_RU = 5;
 
     public static void main(String[] args) throws IOException, TesseractException, InterruptedException {
-        Configuration.holdBrowserOpen = true;
+        //Configuration.holdBrowserOpen = true;
         Configuration.timeout = 15000;
         Configuration.pageLoadTimeout = 120000;
         Configuration.remoteReadTimeout = 120000;
-        //checkPassportManual(INN_DOCUMENT_PATH);
+        Configuration.browser = "edge";
+        //Executor.run("src/main/resources/700.xlsx", new CheckPassports(), 328);
+        checkPassportManual("src/main/resources/700.xlsx");
+        //checkValidOfPassport("src/main/resources/700.xlsx");
         //checkAvailabilityOfInn(INN_DOCUMENT_PATH);
-        checkFedresurs(BANKRUPTS_PATH);
+        //preparePassport("src/main/resources/700.xlsx");
+        //new Executor().run("src/main/resources/700.xlsx", new CheckRuInn());
+        //fillRuInn("src/main/resources/2progon3k.xlsx");
+        //checkFedresurs(BANKRUPTS_PATH, 5991);
         //tabFour();
         //fillRuInn("src/main/resources/20.01.1.xlsx");
         //fillRuInn("src/main/resources/20.01.3.xlsx");
+    }
+
+    private static void preparePassport(String s) throws IOException {
+        File filePath = new File(s);
+        FileInputStream file = new FileInputStream(filePath);
+        XSSFWorkbook workbook = new XSSFWorkbook(file);
+        XSSFSheet sheet = workbook.getSheetAt(0);
+        file.close();
+        try {
+            for (int i = 0; i < sheet.getLastRowNum(); i++) {
+                System.out.println(i);
+                sheet.getRow(i).getCell(4).setCellType(CellType.STRING);
+            }
+        } finally {
+            FileOutputStream outputStream = new FileOutputStream(s);
+            workbook.write(outputStream);
+        }
     }
 
     private static void tabFour() throws IOException {
@@ -101,54 +126,53 @@ public class Main {
         File filePath = new File(path);
         FileInputStream file = new FileInputStream(filePath);
         XSSFWorkbook workbook = new XSSFWorkbook(file);
+        file.close();
         XSSFSheet sheet = workbook.getSheetAt(0);
-        Person person;
-        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+        try {
+            Person person;
+            for (int i = 321; i <= sheet.getLastRowNum(); i++) {
 
-            XSSFRow row = sheet.getRow(i);
-            try {
-                person = createPersonForInn(row);
-            } catch (NullPointerException e) {
-                continue;
+                XSSFRow row = sheet.getRow(i);
+                try {
+                    person = createPersonForInn(row);
+                } catch (NullPointerException e) {
+                    continue;
+                }
+                System.out.println(" " + person.getPassport());
+                String series = person.getPassport().substring(0, 4);
+                String number = person.getPassport().substring(4, 10);
+
+                PassportValidPageActions passportValidPageActions;
+                PassportValidResultPageActions passportValidResultPageActions;
+                try {
+                    passportValidPageActions = new PassportValidPageActions(open("http://xn--b1afk4ade4e.xn--b1ab2a0a.xn--b1aew.xn--p1ai/info-service.htm?sid=2000", PassportValidPage.class));
+                    passportValidPageActions.fillData(series, number);
+                    passportValidResultPageActions = new PassportValidResultPageActions(passportValidPageActions.resolveCaptcha());
+                } catch (Exception e) {
+                    i -= 2;
+                    continue;
+                }
+
+                int a = i;
+
+                boolean result = passportValidResultPageActions.isValid(series, number);
+
+                if (!result) {
+                    row.createCell(13).setCellValue("не действителен");
+                    System.out.println();
+                    System.out.print(++a + " ");
+                    System.out.print(result + " ");
+                    System.out.println(
+                            person.getLastName() + " " +
+                                    person.getName() + " " +
+                                    person.getNameOfFather() + " " +
+                                    person.getPassport());
+                } else {
+                    System.out.print(++a + " ");
+                }
+
             }
-            if (i != 0) {
-                //sleep(10000);
-            }
-            System.out.println(" " + person.getPassport());
-            String series = person.getPassport().substring(0, 4);
-            String number = person.getPassport().substring(4, 10);
-
-            PassportValidPageActions passportValidPageActions;
-            PassportValidResultPageActions passportValidResultPageActions;
-            try {
-                passportValidPageActions = new PassportValidPageActions(open("http://xn--b1afk4ade4e.xn--b1ab2a0a.xn--b1aew.xn--p1ai/info-service.htm?sid=2000", PassportValidPage.class));
-                passportValidPageActions.fillData(series, number);
-                passportValidResultPageActions = new PassportValidResultPageActions(passportValidPageActions.resolveCaptcha());
-            } catch (Exception e) {
-                i -= 2;
-                continue;
-            }
-
-            int a = i;
-
-            boolean result = passportValidResultPageActions.isValid(series, number);
-
-            if (result == false) {
-                row.createCell(PASSPORT_INVALID_MESSAGE_INDEX).setCellValue("не действителен");
-
-                System.out.println();
-                System.out.print(++a + " ");
-                System.out.print(result + " ");
-                System.out.println(
-                        person.getLastName() + " " +
-                                person.getName() + " " +
-                                person.getNameOfFather() + " " +
-                                person.getPassport());
-            } else {
-                System.out.print(++a + " ");
-            }
-            file.close();
-
+        } finally {
             FileOutputStream outputStream = new FileOutputStream(filePath);
             workbook.write(outputStream);
             outputStream.close();
@@ -160,63 +184,68 @@ public class Main {
         FileInputStream file = new FileInputStream(filePath);
         XSSFWorkbook workbook = new XSSFWorkbook(file);
         XSSFSheet sheet = workbook.getSheetAt(0);
+        file.close();
         Person person;
         Scanner scanner = new Scanner(System.in);
-        for (int i = 245; i <= sheet.getLastRowNum(); i++) {
+        try {
+            for (int i = 341; i <= sheet.getLastRowNum(); i++) {
 
-            XSSFRow row = sheet.getRow(i);
-            try {
-                person = createPersonForInn(row);
-            } catch (NullPointerException e) {
-                continue;
+                XSSFRow row = sheet.getRow(i);
+                try {
+                    person = createPersonForInn(row);
+                } catch (NullPointerException e) {
+                    continue;
+                }
+                if (i != 0) {
+                    //sleep(10000);
+                }
+                String series = person.getPassport().substring(0, 4);
+                String number = person.getPassport().substring(4, 10);
+
+                PassportValidPageActions passportValidPageActions;
+                PassportValidResultPageActions passportValidResultPageActions;
+                passportValidPageActions = new PassportValidPageActions(open("http://xn--b1afk4ade4e.xn--b1ab2a0a.xn--b1aew.xn--p1ai/info-service.htm?sid=2000", PassportValidPage.class));
+                passportValidPageActions.fillData(series, number);
+
+                String captcha = scanner.next();
+                if (captcha.equals("Q")) {
+                    i -= 1;
+                    continue;
+                }
+                passportValidPageActions.getCaptchaInput().sendKeys(captcha);
+                passportValidPageActions.getSubmit().click();
+                passportValidResultPageActions = new PassportValidResultPageActions(page(PassportValidResultPage.class));
+
+                int a = i;
+
+                boolean result = passportValidResultPageActions.isValid(series, number);
+
+                if (!result) {
+                    row.createCell(13).setCellValue("не действителен");
+
+                    System.out.println();
+                    System.out.print(++a + " ");
+                    System.out.print(result + " ");
+                    System.out.println(
+                            person.getLastName() + " " +
+                                    person.getName() + " " +
+                                    person.getNameOfFather() + " " +
+                                    person.getPassport());
+                } else {
+                    System.out.print(++a + " ");
+                }
+                FileOutputStream outputStream = new FileOutputStream(filePath);
+                workbook.write(outputStream);
+                outputStream.close();
             }
-            if (i != 0) {
-                //sleep(10000);
-            }
-            String series = person.getPassport().substring(0, 4);
-            String number = person.getPassport().substring(4, 10);
-
-            PassportValidPageActions passportValidPageActions;
-            PassportValidResultPageActions passportValidResultPageActions;
-            passportValidPageActions = new PassportValidPageActions(open("http://xn--b1afk4ade4e.xn--b1ab2a0a.xn--b1aew.xn--p1ai/info-service.htm?sid=2000", PassportValidPage.class));
-            passportValidPageActions.fillData(series, number);
-
-            String captcha = scanner.next();
-            if (captcha.equals("Q")) {
-                i -= 1;
-                continue;
-            }
-            passportValidPageActions.getCaptchaInput().sendKeys(captcha);
-            passportValidPageActions.getSubmit().click();
-            passportValidResultPageActions = new PassportValidResultPageActions(page(PassportValidResultPage.class));
-
-            int a = i;
-
-            boolean result = passportValidResultPageActions.isValid(series, number);
-
-            if (result == false) {
-                row.createCell(PASSPORT_INVALID_MESSAGE_INDEX).setCellValue("не действителен");
-
-                System.out.println();
-                System.out.print(++a + " ");
-                System.out.print(result + " ");
-                System.out.println(
-                        person.getLastName() + " " +
-                                person.getName() + " " +
-                                person.getNameOfFather() + " " +
-                                person.getPassport());
-            } else {
-                System.out.print(++a + " ");
-            }
-            file.close();
-
+        } finally {
             FileOutputStream outputStream = new FileOutputStream(filePath);
             workbook.write(outputStream);
             outputStream.close();
         }
     }
 
-    public static void checkFedresurs(String path) throws IOException {
+    public static void checkFedresurs(String path, int index) throws IOException {
         InstantImpl.start();
         File filePath = new File(path);
         FileInputStream file = new FileInputStream(filePath);
@@ -226,19 +255,22 @@ public class Main {
         file.close();
         try {
             Person person;
-            for (int i = 0; i <= rowNum; i++) {
+            for (int i = index; i <= rowNum; i++) {
                 XSSFRow row = sheet.getRow(i);
                 try {
                     person = createPersonModelForFedresurs(row);
                 } catch (NullPointerException e) {
                     continue;
                 }
-                //if (!row.getCell(6).getStringCellValue().equals("перепроверить")) continue;
-                open("https://bankrot.fedresurs.ru/bankrupts?regionId=all&isActiveLegalCase=null&offset=0&limit=15");
+                if (row.getCell(6).getStringCellValue().equals("не нашли")) continue;
+                if (i == index)
+                    open("https://bankrot.fedresurs.ru/bankrupts?regionId=all&isActiveLegalCase=null&offset=0&limit=15");
+                switchTo().window(0);
                 SelenideElement selenideElement = $(By.xpath("//input[@formcontrolname='searchString']"));
+                selenideElement.clear();
                 fillField(selenideElement, person.getLastName() + " " + person.getName() + " " + person.getNameOfFather());
                 $(By.xpath("//button")).click();
-                sleep(1750);
+                sleep(2000);
                 if ($(withText("Физические лица")).is(Condition.visible)) $(withText("Физические лица")).click();
                 if ($(By.xpath("//button[text()=' Принять ']")).is(Condition.visible))
                     $(By.xpath("//button[text()=' Принять ']")).click();
@@ -264,7 +296,6 @@ public class Main {
                             if (birthday.equals(person.getDate())) {
                                 result = true;
                                 System.out.println("Дата совпала");
-                                closeWindow();
                                 break;
                             } else {
                                 System.out.println("Дата не совпала");
@@ -275,7 +306,6 @@ public class Main {
                             if (inn.equals(row.getCell(6).getStringCellValue())) {
                                 result = true;
                                 System.out.println("Инн совпал");
-                                closeWindow();
                                 break;
                             } else {
                                 System.out.println("Инн не совпал");
@@ -286,7 +316,7 @@ public class Main {
                         switchTo().window(0);
                     }
                 }
-                if (result == false) {
+                if (!result) {
                     System.out.println(/*person.getIndex() + */"не наш");
                     row.createCell(6).setCellValue("не нашли");
                 } else {
@@ -297,8 +327,9 @@ public class Main {
                                     person.getNameOfFather() + " " +
                                     person.getDate());
                     XSSFCell cell = row.createCell(6);
-                    cell.setCellValue("найден");
-                    createLinkCell("найден", WebDriverRunner.url(), cell, workbook);
+                    cell.setCellValue("наш");
+                    createLinkCell("наш", WebDriverRunner.url(), cell, workbook);
+                    closeWindow();
                 }
             }
         } finally {
@@ -342,7 +373,7 @@ public class Main {
 
             boolean result = innPageActions.isExistInn();
 
-            if (result == false) {
+            if (!result) {
                 System.out.print(++a + " ");
                 System.out.println(
                         person.getLastName() + " " +
@@ -412,7 +443,7 @@ public class Main {
 
                 boolean result = innPageActions.isExistInn();
 
-                if (result == false) {
+                if (!result) {
                     System.out.print(++a + " ");
                     System.out.println(
                             person.getLastName() + " " +
@@ -422,7 +453,7 @@ public class Main {
                                     person.getPassport());
                 } else {
                     String inn = innPageActions.getInn();
-                    XSSFCell cell = row.createCell(INN_INDEX);
+                    XSSFCell cell = row.createCell(5);
                     cell.setCellValue(inn);
                 }
             }
@@ -465,43 +496,42 @@ public class Main {
 
     public static Person createPersonForInn(XSSFRow row) {
         Person person = new Person();
-        String backgroundColor = "";
-
-        try {
-            backgroundColor = getBackgroundColor(row.getCell(1)).trim();
-        } catch (NullPointerException e) {
-
-        }
-
-        if (backgroundColor.equals("ff0000")) {
-            throw new NullPointerException("Помечено красным");
-        }
-
-        long numericPassport = (long) row.getCell(5).getNumericCellValue();
-        if (numericPassport == 0) throw new NullPointerException("Нет пасспорта");
-        String passport = String.valueOf(numericPassport);
+//        String backgroundColor = "";
+//
+//        try {
+//            backgroundColor = getBackgroundColor(row.getCell(1)).trim();
+//        } catch (NullPointerException e) {
+//
+//        }
+//
+//        if (backgroundColor.equals("ff0000")) {
+//            throw new NullPointerException("Помечено красным");
+//        }
+//
+        String passport = row.getCell(4).getStringCellValue();
+        if (passport == null) throw new NullPointerException("Нет пасспорта");
         if (passport.length() == 9) {
             passport = "0" + passport;
         }
         if (passport.length() == 8) {
             passport = "00" + passport;
         }
-        String lastName = row.getCell(1).getStringCellValue().replace((char) 160, 'e');
+        String lastName = row.getCell(0).getStringCellValue().replace((char) 160, 'e');
         person.setLastName(lastName.replace("e", ""));
         person.setPassport(passport);
         try {
-            person.setDate(row.getCell(4).getLocalDateTimeCellValue().format(DATE_FORMATTER));
+            person.setDate(row.getCell(3).getLocalDateTimeCellValue().format(DATE_FORMATTER));
         } catch (Exception e) {
-            person.setDate(row.getCell(4).getStringCellValue());
+            person.setDate(row.getCell(3).getStringCellValue());
         }
-        person.setName(row.getCell(2).getStringCellValue().replace((char) 160, 'e').replace("e", ""));
+        person.setName(row.getCell(1).getStringCellValue().replace((char) 160, 'e').replace("e", ""));
 
         if (person.getDate() == null) {
             throw new NullPointerException("Пустая дата");
         }
 
         try {
-            person.setNameOfFather(row.getCell(3).getStringCellValue().trim());
+            person.setNameOfFather(row.getCell(2).getStringCellValue().trim());
         } catch (NullPointerException e) {
             person.setNameOfFather(null);
         }

@@ -6,24 +6,12 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class ExcelUtils {
 
     private static XSSFWorkbook workbook;
-
-    public static XSSFWorkbook getWorkBookForRead(String fileLocation) throws IOException {
-        if (workbook == null) {
-            try {
-                FileInputStream file = new FileInputStream(new File(fileLocation));
-                workbook = new XSSFWorkbook(file);
-            } catch (FileNotFoundException e) {
-                throw new NullPointerException();
-            }
-        }
-        return workbook;
-    }
 
     public static String getBackgroundColor(XSSFCell cell) {
         byte[] rgbWithTint = cell.getCellStyle().getFillForegroundColorColor().getRGBWithTint();
@@ -31,5 +19,26 @@ public class ExcelUtils {
             return null;
         }
         return Hex.encodeHexString(rgbWithTint);
+    }
+
+    public static XSSFWorkbook readWorkbook(String path) throws IOException {
+        File filePath = new File(path);
+        FileInputStream inputStream = new FileInputStream(filePath);
+        if (workbook == null) {
+            workbook = new XSSFWorkbook(inputStream);
+        }
+        inputStream.close();
+        return workbook;
+    }
+
+    public static XSSFWorkbook getWorkbook() {
+        return workbook;
+    }
+
+    public static void writeWorkbook(String path) throws IOException {
+        File filePath = new File(path);
+        FileOutputStream outputStream = new FileOutputStream(filePath);
+        workbook.write(outputStream);
+        outputStream.close();
     }
 }
