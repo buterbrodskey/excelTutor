@@ -21,8 +21,8 @@ public class InnPageActions {
     }
 
     public void fillPersonInnDate(Person search) throws InterruptedException {
-        fillField(page.getNameInput(), search.getName());
         fillField(page.getLastNameInput(), search.getLastName());
+        fillField(page.getNameInput(), search.getName());
         fillNameOfFather(page.getNameOfFatherInput(), search.getNameOfFather());
         fillField(page.getBdateInput(), search.getDate());
         fillField(page.getDocnoInput(), String.valueOf(search.getPassport()));

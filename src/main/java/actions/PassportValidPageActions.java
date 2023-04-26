@@ -4,12 +4,18 @@ import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.SelenideElement;
 import com.twocaptcha.TwoCaptcha;
 import com.twocaptcha.captcha.Normal;
+import net.sourceforge.tess4j.ITesseract;
+import net.sourceforge.tess4j.Tesseract;
+import net.sourceforge.tess4j.TesseractException;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.io.FileHandler;
 import pages.PassportValidPage;
 import pages.PassportValidResultPage;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.codeborne.selenide.Selenide.page;
 
@@ -70,5 +76,32 @@ public class PassportValidPageActions {
         page.getCaptchaInput().sendKeys(captcha.getCode());
         page.getSubmit().click();
         return page(PassportValidResultPage.class);
+    }
+
+    public PassportValidResultPage resolveCaptcha(int q) throws IOException, TesseractException, InterruptedException {
+        ITesseract image = new Tesseract();
+        image.setDatapath("src/main/resources/tessdata");
+        image.setLanguage("eng");
+        String path = "src/main/java/captcha/captcha.png";
+        String capthaResolve = null;
+        while (true) {
+            File captcha = page.getCaptcha().getScreenshotAs(OutputType.FILE);
+            FileHandler.copy(captcha, new File(path));
+            String str = image.doOCR(new File(path));
+            Pattern pattern = Pattern.compile("\\d\\d\\d\\d\\d\\d");
+            Matcher matcher = pattern.matcher(str);
+            if (matcher.find()) {
+                capthaResolve = str.substring(matcher.start(), matcher.end());
+            } else {
+                page.getSubmit().click();
+                continue;
+            }
+            page.getCaptchaInput().clear();
+            page.getCaptchaInput().sendKeys(capthaResolve);
+            PassportValidResultPage resultPage = clickSubmit();
+            if (resultPage.getResult().isDisplayed()) {
+                return resultPage;
+            }
+        }
     }
 }

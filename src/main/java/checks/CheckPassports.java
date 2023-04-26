@@ -2,7 +2,6 @@ package checks;
 
 import actions.PassportValidPageActions;
 import actions.PassportValidResultPageActions;
-import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.Selenide;
 import model.Person;
@@ -10,7 +9,6 @@ import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.openqa.selenium.By;
 import pages.PassportValidPage;
 
-import static checks.CheckRuInn.createPersonForInn;
 import static com.codeborne.selenide.Condition.*;
 import static com.codeborne.selenide.Condition.not;
 import static com.codeborne.selenide.Selenide.$;
@@ -20,8 +18,7 @@ public class CheckPassports implements ICheck {
     @Override
     public void run(XSSFRow row) {
         Configuration.browser = "edge";
-        Person person;
-        person = createPersonForInn(row);
+        Person person = createPersonDefault(row);
 
         System.out.println(" " + person.getPassport());
         String series = person.getPassport().substring(0, 4);

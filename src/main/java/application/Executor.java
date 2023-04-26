@@ -13,7 +13,7 @@ import static excel.ExcelUtils.writeWorkbook;
 public class Executor {
 
 
-    public void run(final String path, final ICheck check) throws IOException {
+    public static void run(final String path, final ICheck check) throws IOException {
         InstantImpl.start();
         XSSFWorkbook workbook = readWorkbook(path);
         try {
@@ -41,7 +41,7 @@ public class Executor {
         }
     }
 
-    public void run(final String path, final ICheck check, int startIndex, int endIndex) throws IOException {
+    public static void run(final String path, final ICheck check, int startIndex, int endIndex) throws IOException {
         InstantImpl.start();
         XSSFWorkbook workbook = readWorkbook(path);
         try {
